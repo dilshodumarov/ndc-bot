@@ -1,0 +1,52 @@
+services:
+  ai-seller:
+    image: postgres:latest
+    container_name: ai-seller
+    environment:
+      POSTGRES_USER: ai-seller
+      POSTGRES_PASSWORD: ai-seller_secret
+      POSTGRES_DB: seller_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ai-seller
+
+  ai-seller-redis:
+    image: redis:latest
+    container_name: ai-seller-redis
+    ports:
+      - "6378:6379"
+    networks:
+      - ai-seller
+    
+
+    
+  minio:
+    image: docker.io/bitnami/minio:2024
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - 'minio_data:/data'
+    environment:
+      - MINIO_ROOT_USER=dilshod
+      - MINIO_ROOT_PASSWORD=umarov05@
+      - MINIO_DEFAULT_BUCKETS=photos
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ai-seller
+  
+      
+networks:
+  ai-seller: 
+    external: true
+
+volumes:
+  postgres_data:
+  minio_data:

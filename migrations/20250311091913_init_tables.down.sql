@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS "chat_history";
+DROP TABLE IF EXISTS "bot_commands";
+DROP TABLE IF EXISTS "order_products";
+DROP TABLE IF EXISTS "order";
+DROP TABLE IF EXISTS "product";
+DROP TABLE IF EXISTS "attribute";
+DROP TABLE IF EXISTS "category";
+DROP TABLE IF EXISTS "client";
+DROP TABLE IF EXISTS "integration";
+DROP TABLE IF EXISTS "business";
+DROP TABLE IF EXISTS "user";
+DROP TABLE IF EXISTS "role";
+DROP TABLE IF EXISTS "client_type";

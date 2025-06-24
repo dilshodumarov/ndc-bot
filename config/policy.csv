@@ -1,0 +1,91 @@
+p, unauthorized, /swagger/*, GET
+p, unauthorized, /v1/auth/*, GET|POST
+
+p, unauthorized, /v1/user/*, PUT|DELETE
+p, unauthorized, /v1/user/:id, GET
+p, user, /v1/user/*, GET|POST|PUT|DELETE
+p, admin, /v1/user/*, GET|POST|PUT|DELETE
+
+p, user, /v1/product/*, GET|POST|PUT|DELETE
+p, admin, /v1/product/*, GET|POST|PUT|DELETE
+
+p, unauthorized, /v1/product/*, GET
+
+
+p, user, /v1/basket/*, GET|POST|PUT|DELETE
+p, admin, /v1/basket/*, GET|POST|PUT|DELETE
+
+p, admin, /v1/basket/*, GET|POST|PUT|DELETE
+
+p, user, /v1/order/*, GET|POST|PUT|DELETE
+p, admin, /v1/order/*, GET|POST|PUT|DELETE
+
+p, admin, /v1/order/*, GET|POST|PUT|DELETE
+
+p, user, /v1/post/*,  GET|POST|PUT|DELETE
+p, admin, /v1/post/*,  GET|POST|PUT|DELETE
+
+p, unauthorized, /v1/post/*,  GET
+
+
+p, user, /v1/session/*, GET|DELETE
+p, admin, /v1/session/*, GET|POST|PUT|DELETE
+
+p, user, /v1/teacher/*, GET|POST|PUT|DELETE
+p, admin, /v1/teacher/*, GET|POST|PUT|DELETE
+
+p, unauthorized, /v1/teacher/*, GET
+
+p, user, /v1/course/*, GET|POST|PUT|DELETE
+p, admin, /v1/course/*, GET|POST|PUT|DELETE
+
+p, unauthorized, /v1/course/*, GET
+
+p, user, /v1/category/*, GET|POST|PUT|DELETE
+p, admin, /v1/category/*, GET|POST|PUT|DELETE
+
+p, unauthorized, /v1/category/*, GET 
+
+p, user, /v1/post-category/*, GET|POST|PUT|DELETE
+p, admin, /v1/post-category/*, GET|POST|PUT|DELETE
+
+p, unauthorized, /v1/post-category/*, GET 
+
+p, user, /v1/lesson/*, GET|POST|PUT|DELETE
+p, admin, /v1/lesson/*, GET|POST|PUT|DELETE
+p, unauthorized, /v1/lesson/*, GET|POST|PUT|DELETE
+
+p, user, /v1/comments/*, GET|POST|PUT|DELETE
+p, admin, /v1/comments/*, GET|POST|PUT|DELETE 
+
+p, user, /v1/comment-reply/*, GET|POST|PUT|DELETE
+p, admin, /v1/comment-reply/*, GET|POST|PUT|DELETE
+
+p, user, /v1/user-course/*, GET|POST|PUT|DELETE
+p, admin, /v1/user-course/*, GET|POST|PUT|DELETE
+
+p, user, /v1/user-lessons/*, GET|POST|PUT|DELETE
+p, admin, /v1/user-lessons/*, GET|POST|PUT|DELETE
+
+p, user, /v1/certificate/*, GET|POST|PUT|DELETE
+p, admin, /v1/certificate/*, GET|POST|PUT|DELETE
+
+p, user, /v1/chat/*, GET|POST|PUT|DELETE
+p, admin, /v1/chat/*, GET|POST|PUT|DELETE
+
+p, user, /v1/ws/*, GET
+p, admin, /v1/ws/*, GET
+p, user, /v1/minio/*, GET|POST|PUT|DELETE
+p, admin, /v1/minio/*, GET|POST|PUT|DELETE
+p, unauthorized, /v1/minio/*, GET|POST|PUT|DELETE
+
+p,  user, /v1/stream/*, GET
+p,  admin, /v1/stream/*, GET
+p,  unauthorized, /v1/stream/*, GET
+
+p,  user, /v1/wss/*,GET|POST|PUT|DELETE
+p,  unauthorized, /v1/wss/*,GET|POST|PUT|DELETE
+
+g, user, unauthorized
+g, admin, user
+g, admin, teacher

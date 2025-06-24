@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  telegram-bot:
+    build: .
+    container_name: telegram-fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sessions:/app/sessions
+    restart: always
+    networks:
+      - ai-seller
+
+networks:
+  ai-seller:
+    external: true

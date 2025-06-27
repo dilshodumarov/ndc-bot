@@ -14,7 +14,7 @@ import (
 	"ndc/ai_bot/internal/infrastructure/telegramuser"
 	psql "ndc/ai_bot/internal/repo/postgres"
 	redisRepo "ndc/ai_bot/internal/repo/redis"
-	repo "ndc/ai_bot/internal/usecase/postgres"
+	uscase "ndc/ai_bot/internal/usecase/postgres"
 	uscaseredis "ndc/ai_bot/internal/usecase/redis"
 	"ndc/ai_bot/pkg/logger"
 	"ndc/ai_bot/pkg/postgres"
@@ -46,14 +46,10 @@ func Run(cfg *config.Config) {
 		Password: "",
 		DB:       0,
 	})
-	// psql.New(pg),
-	// psql.NewOrderRepo(pg),
-	// psql.NewAuthRepo(pg),
-	// psql.NewChatepo(pg),
-	// psql.NewBusinessRepo(pg),
-	// Use case
-	translationUseCase := repo.New(
-		repo.UseCase{
+
+	// Use uscase
+	translationUseCase := uscase.New(
+		uscase.UseCase{
 			Repo:      psql.New(pg),
 			RepoOrder: psql.NewOrderRepo(pg),
 			AuthRepo:  psql.NewAuthRepo(pg),

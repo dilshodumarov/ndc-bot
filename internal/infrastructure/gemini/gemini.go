@@ -8,7 +8,7 @@ import (
 	"ndc/ai_bot/config"
 	"ndc/ai_bot/internal/entity"
 
-	repo "ndc/ai_bot/internal/usecase/postgres"
+	uscase "ndc/ai_bot/internal/usecase/postgres"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,7 +19,7 @@ import (
 
 type Gemini struct {
 	GeminiModel *genai.GenerativeModel
-	UseCase     *repo.UseCase
+	UseCase     *uscase.UseCase
 }
 
 func NewGeminiModel(cfg *config.Config) (*Gemini, error) {

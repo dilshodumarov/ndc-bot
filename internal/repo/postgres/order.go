@@ -1,4 +1,4 @@
-package persistent
+package postgres
 
 import (
 	"context"
@@ -356,46 +356,7 @@ func (r *OrderRepo) GetUsersByLastOrder(ctx context.Context) ([]*entity.LastOrde
 	return orders, nil
 }
 
-func (r *OrderRepo) GetBusinessByPhone(ctx context.Context, req entity.GetBussinesId) (*entity.BusinessInfo, error) {
-	var (
-		query string
-		arg   string
-	)
 
-	switch {
-	case req.Phone != "":
-		query = `
-			SELECT b.guid AS business_id, b.owner_id
-			FROM telegram_accaunt ta
-			JOIN business b ON ta.business_id = b.guid
-			WHERE ta.number = $1 AND ta.from = 'telegram' AND b.deleted_at IS NULL
-		`
-		arg = req.Phone
-
-	case req.UserId != "":
-		query = `
-			SELECT b.guid AS business_id, b.owner_id
-			FROM telegram_accaunt ta
-			JOIN business b ON ta.business_id = b.guid
-			WHERE ta.user_id = $1 AND ta.from = 'instagram' AND b.deleted_at IS NULL
-		`
-		arg = req.UserId
-
-	default:
-		return nil, fmt.Errorf("phone yoki user_id bo'lishi kerak")
-	}
-
-	var info entity.BusinessInfo
-	err := r.Pool.QueryRow(ctx, query, arg).Scan(&info.BusinessID, &info.OwnerID)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("biznes ID topilmadi")
-		}
-		return nil, fmt.Errorf("OrderRepo - GetBusinessByPhone - Scan: %w", err)
-	}
-
-	return &info, nil
-}
 
 func (r *OrderRepo) UpdateOrderStatus(ctx context.Context, req *entity.UpdateOrderRequest) (*entity.UpdateOrderResponse, error) {
 	tx, err := r.Pool.Begin(ctx)

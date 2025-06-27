@@ -201,7 +201,7 @@ func SendTelegramNotification(guid, productId string) error {
 func (t *Handler) ShowMenu(chatID int64) {
 	ctx := context.Background()
 
-	menus, err := t.Usecase.AuthRepo.GetAllMenusByOwnerID(ctx, t.BusinessId)
+	menus, err := t.Usecase.Business.GetAllMenusByOwnerID(ctx, t.BusinessId)
 	if err != nil {
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
 			ChatID:  chatID,
@@ -264,7 +264,7 @@ func (t *Handler) SendMessageToAdmin(chat entity.SendMessageResponse) {
 	}
 	// http://ai-seller-admin:8080/v1/websocket/chat/send-message
 	// http://localhost:8080/v1/websocket/chat/send-message
-	resp, err := http.Post("http://ai-seller-admin:8080/v1/websocket/chat/send-message", "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post("http://localhost:8080/v1/websocket/chat/send-message", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Println("Error while sending POST request:", err)
 		return

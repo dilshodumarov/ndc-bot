@@ -8,7 +8,7 @@ import (
 	"ndc/ai_bot/config"
 	"ndc/ai_bot/internal/entity"
 
-	"ndc/ai_bot/internal/usecase/product"
+	repo "ndc/ai_bot/internal/usecase/postgres"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,7 +19,7 @@ import (
 
 type Gemini struct {
 	GeminiModel *genai.GenerativeModel
-	UseCase     *product.UseCase
+	UseCase     *repo.UseCase
 }
 
 func NewGeminiModel(cfg *config.Config) (*Gemini, error) {
@@ -311,7 +311,7 @@ Siz onlayn do'kon uchun mahsulot tanlashga yordam beruvchi AI-assistent bo'lasiz
 	// Generate AI response
 	resp, err := g.GeminiModel.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
-		return nil, fmt.Errorf("AI request error: %v", err)	
+		return nil, fmt.Errorf("AI request error: %v", err)
 	}
 
 	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
@@ -345,6 +345,3 @@ Siz onlayn do'kon uchun mahsulot tanlashga yordam beruvchi AI-assistent bo'lasiz
 
 	return &query, nil
 }
-
-
-

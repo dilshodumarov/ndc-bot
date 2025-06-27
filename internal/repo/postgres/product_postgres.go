@@ -1,4 +1,4 @@
-package persistent
+package postgres
 
 import (
 	"context"
@@ -25,39 +25,6 @@ func New(pg *postgres.Postgres) *ProductRepo {
 	return &ProductRepo{pg}
 }
 
-// GetProduct -.
-func (r *ProductRepo) GetHistory(ctx context.Context) ([]entity.Product, error) {
-	// sql, _, err := r.Builder.
-	// 	Select("source, destination, original, Product").
-	// 	From("history").
-	// 	ToSql()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("ProductRepo - GetHistory - r.Builder: %w", err)
-	// }
-
-	// rows, err := r.Pool.Query(ctx, sql)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("ProductRepo - GetHistory - r.Pool.Query: %w", err)
-	// }
-	// defer rows.Close()
-
-	// entities := make([]entity.Product, 0, _defaultEntityCap)
-
-	// for rows.Next() {
-	// 	e := entity.Product{}
-
-	// 	err = rows.Scan(&e.Source, &e.Destination, &e.Original, &e.Product)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("ProductRepo - GetHistory - rows.Scan: %w", err)
-	// 	}
-
-	// 	entities = append(entities, e)
-	// }
-
-	// return entities, nil
-
-	return nil, nil
-}
 
 func (r *ProductRepo) GetProduct(ctx context.Context, req entity.GetProductRequest) ([]entity.Product, error) {
 	fmt.Println("ProductRepo - GetProduct - name:", req.Name)
@@ -323,52 +290,8 @@ func (r *ProductRepo) GetProductInfoForNotification(ctx context.Context, product
 
 // internal/infrastructure/postgres/business.go
 
-func (r *ProductRepo) ListBusinesses(ctx context.Context) ([]entity.Business, error) {
-	sql, args, err := r.Builder.
-		Select("guid, name").
-		From("business").
-		ToSql()
-	if err != nil {
-		return nil, fmt.Errorf("BusinessRepo - ListBusinesses - ToSql: %w", err)
-	}
 
-	rows, err := r.Pool.Query(ctx, sql, args...)
-	if err != nil {
-		return nil, fmt.Errorf("BusinessRepo - ListBusinesses - Query: %w", err)
-	}
-	defer rows.Close()
 
-	var businesses []entity.Business
-	for rows.Next() {
-		var b entity.Business
-		if err := rows.Scan(&b.ID, &b.Name); err != nil {
-			return nil, fmt.Errorf("BusinessRepo - ListBusinesses - Scan: %w", err)
-		}
-		businesses = append(businesses, b)
-	}
-
-	return businesses, nil
-}
-
-func (r *ProductRepo) UpdateUserBusiness(ctx context.Context, userID string, businessID string) error {
-	// Prepare SQL query to update the business_id for the given user
-	sql, args, err := r.Builder.
-		Update(`"user"`).
-		Set("business_id", businessID).
-		Where("guid = ?", userID).
-		ToSql()
-	if err != nil {
-		return fmt.Errorf("UserRepo - UpdateUserBusiness - ToSql: %w", err)
-	}
-
-	// Execute the query
-	_, err = r.Pool.Exec(ctx, sql, args...)
-	if err != nil {
-		return fmt.Errorf("UserRepo - UpdateUserBusiness - Exec: %w", err)
-	}
-
-	return nil
-}
 
 func (r *ProductRepo) ListProductsForAI(ctx context.Context, businessID string) ([]entity.ProductAI, error) {
 	query := `

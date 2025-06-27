@@ -9,13 +9,13 @@ import (
 	"ndc/ai_bot/config"
 	"ndc/ai_bot/internal/entity"
 	"ndc/ai_bot/internal/infrastructure/gemini"
+	instagram "ndc/ai_bot/internal/infrastructure/instagram"
 	"ndc/ai_bot/internal/infrastructure/telegram"
 	"ndc/ai_bot/internal/infrastructure/telegramuser"
-	"ndc/ai_bot/internal/repo/persistent"
+	psql "ndc/ai_bot/internal/repo/postgres"
 	redisRepo "ndc/ai_bot/internal/repo/redis"
-	"ndc/ai_bot/internal/usecase/product"
+	repo "ndc/ai_bot/internal/usecase/postgres"
 	uscaseredis "ndc/ai_bot/internal/usecase/redis"
-	instagram "ndc/ai_bot/internal/infrastructure/instagram"
 	"ndc/ai_bot/pkg/logger"
 	"ndc/ai_bot/pkg/postgres"
 
@@ -46,12 +46,20 @@ func Run(cfg *config.Config) {
 		Password: "",
 		DB:       0,
 	})
-
+	// psql.New(pg),
+	// psql.NewOrderRepo(pg),
+	// psql.NewAuthRepo(pg),
+	// psql.NewChatepo(pg),
+	// psql.NewBusinessRepo(pg),
 	// Use case
-	translationUseCase := product.New(
-		persistent.New(pg),
-		persistent.NewOrderRepo(pg),
-		persistent.NewAuthRepo(pg),
+	translationUseCase := repo.New(
+		repo.UseCase{
+			Repo:      psql.New(pg),
+			RepoOrder: psql.NewOrderRepo(pg),
+			AuthRepo:  psql.NewAuthRepo(pg),
+			Chat:      psql.NewChatepo(pg),
+			Business:  psql.NewBusinessRepo(pg),
+		},
 	)
 
 	redisUscase := uscaseredis.NewRedisRepo(
@@ -84,7 +92,7 @@ func Run(cfg *config.Config) {
 	for _, bot := range res {
 		go func(bot *entity.BotIntegration) {
 
-			tgBot, err := telegram.NewHandler(cfg, bot.Token, bot.BusinessID, bot.UserID,newGeminiModel, translationUseCase, redisUscase)
+			tgBot, err := telegram.NewHandler(cfg, bot.Token, bot.BusinessID, bot.UserID, newGeminiModel, translationUseCase, redisUscase)
 			if err != nil {
 				log.Printf("Bot yaratishda xatolik (BusinessID: %s): %v", bot.BusinessID, err)
 				return
@@ -142,7 +150,7 @@ func Run(cfg *config.Config) {
 
 	c.Start()
 	r := gin.Default()
-	api.NewTelegramRoutes(*telegramUscase, *instagramUscase,cfg, r)
+	api.NewTelegramRoutes(*telegramUscase, *instagramUscase, cfg, r)
 	api.NewRouter(r)
 	r.Run(":8081")
 

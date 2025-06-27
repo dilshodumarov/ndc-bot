@@ -8,7 +8,7 @@ import (
 	"ndc/ai_bot/config"
 	"ndc/ai_bot/internal/entity"
 	"ndc/ai_bot/internal/infrastructure/gemini"
-	"ndc/ai_bot/internal/usecase/product"
+	repo "ndc/ai_bot/internal/usecase/postgres"
 	uscaseredis "ndc/ai_bot/internal/usecase/redis"
 	"strconv"
 	"time"
@@ -18,7 +18,7 @@ import (
 
 var (
 	newGeminiModel     *gemini.Gemini
-	translationUseCase *product.UseCase
+	translationUseCase *repo.UseCase
 	redisUscase        *uscaseredis.Uscase
 	errorMEssage       string
 )
@@ -678,7 +678,7 @@ func StopBot(guid string) error {
 	return nil
 }
 
-func CreateGlobalVar(geminiModel *gemini.Gemini, UseCase *product.UseCase, redisUs *uscaseredis.Uscase) {
+func CreateGlobalVar(geminiModel *gemini.Gemini, UseCase *repo.UseCase, redisUs *uscaseredis.Uscase) {
 	newGeminiModel = geminiModel
 	translationUseCase = UseCase
 	redisUscase = redisUs

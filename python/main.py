@@ -48,7 +48,6 @@ class MessageRequest(BaseModel):
 class IntegrationResponse(BaseModel):
     code: int
     message: str
-    message_id: int
 
 class ImageMessageRequest(BaseModel):
     phone: str

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -191,10 +192,15 @@ func (r *OrderRepo) CreateOrder(ctx context.Context, order entity.Order) (*entit
 			WHERE client_id = $1 AND status = 'yangi' AND deleted_at IS NULL
 			RETURNING guid
 		`, clientID.String).Scan(&deletedOrderID)
-		if err != nil {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("OrderRepo - CreateOrder - Soft delete old yangi: %w", err)
 		}
-
+		var order_guid *string
+		if deletedOrderID.Valid {
+			order_guid = &deletedOrderID.String
+		} else {
+			order_guid = nil
+		}
 		err = tx.QueryRow(ctx, `
 		INSERT INTO "order" (
 			client_id, order_guid, status, status_changed_time, status_number,
@@ -204,7 +210,8 @@ func (r *OrderRepo) CreateOrder(ctx context.Context, order entity.Order) (*entit
 	VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 	RETURNING guid, order_id
 `,
-			clientID.String, deletedOrderID.String, order.Status, order.StatusNumber,
+
+			clientID.String, order_guid, order.Status, order.StatusNumber,
 			order.Platform, order.BusinessId, order.StatusId, order.Location, order.TotalPrice,
 		).Scan(&orderID, &OrderIdSerial)
 
@@ -355,8 +362,6 @@ func (r *OrderRepo) GetUsersByLastOrder(ctx context.Context) ([]*entity.LastOrde
 
 	return orders, nil
 }
-
-
 
 func (r *OrderRepo) UpdateOrderStatus(ctx context.Context, req *entity.UpdateOrderRequest) (*entity.UpdateOrderResponse, error) {
 	tx, err := r.Pool.Begin(ctx)

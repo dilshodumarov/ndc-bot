@@ -263,7 +263,9 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		}
 		return
 	}
-
+    if FirstRes.Product!=nil{
+		userInput=*FirstRes.Product
+	}
 	if FirstRes.IsProductSearch {
 		ListProducts, err := t.Usecase.ListProductsForAI(ctx, BussinesId)
 		if err != nil {
@@ -277,7 +279,23 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			t.SendErrorTelegramMessage(ctx, chatID)
 			return
 		}
+		SettingsAi.PromtProdcut+=`Agar JSON javobida "products" mavjud bo‘lsa:
 
+- "message" maydonining **oxiriga** faqat quyidagi matnni qo‘shing:
+
+🎁 BONUSLAR:  
+🥤 8 ta va undan ortiq buyurtma – 1.5L Coca-Cola bepul!  
+🚚 5 ta va undan ortiq buyurtma – dastavka bepul!
+
+⛔ Hech qanday boshqa so‘z, jumla yoki izoh **qo‘shmang**.  
+⛔ "Siz tanlagan mahsulotlar", "Siz uchun", "O‘xshash" kabi iboralarni **yozma**.  
+⛔ Faqat berilgan matnni *xuddi shu ko‘rinishda* 'message' maydoniga joylashtiring.
+
+Agar "products" mavjud bo‘lmasa — bu BONUSLAR matnini **umuman yozma**.
+.
+
+				
+`
 		FoudnProducts, err := t.GeminiModel.ExtractProductName(ctx, userInput, SettingsAi.PromtProdcut, listProductStr, chatHistory)
 		if err != nil {
 			fmt.Println("Error while getting ExtractProductName:", err)
@@ -292,9 +310,6 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		}
 		ResponseToken += EstimateTokenCount(string(ByteRes))
 		TokenRequest += EstimateTokenCount(userInput + string(listProductStr) + SettingsAi.PromtProdcut + string(chatHistoryStr))
-		t.SendTelegramMessage(ctx, entity.SendMessageModel{
-			ChatID: chatID,
-		})
 		err = t.Usecase.CreateTokenUsage(ctx, &entity.ClientTokenUsage{
 			BusinessID:     BussinesId,
 			SourceType:     "bot",
@@ -344,6 +359,10 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			order.ProductOrders = append(order.ProductOrders, products)
 
 		}
+		t.SendTelegramMessage(ctx, entity.SendMessageModel{
+			ChatID: chatID,
+			Message: FoudnProducts.Message,
+		})
 
 		_, err = t.Usecase.CreateOrder(ctx, order)
 		if err != nil {
@@ -378,7 +397,25 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		return
 	}
 	if FirstRes.Action == "confirm_order" {
-		IsTrue, err := t.Usecase.CheckProductCount(ctx, BussinesId, FirstRes.Products)
+		ListProducts, err := t.Usecase.ListProductsForAI(ctx, BussinesId)
+		if err != nil {
+			fmt.Println("Error while getting ListProductsForAI:", err)
+			t.SendErrorTelegramMessage(ctx, chatID)
+			return
+		}
+		listProduct, err := json.Marshal(ListProducts)
+		if err != nil {
+			fmt.Println("Error while  Marshal:", err)
+			t.SendErrorTelegramMessage(ctx, chatID)
+			return
+		}
+		ByNameRes,err:=t.GeminiModel.GetProductIDbyName(ctx,userInput,listProduct)
+		if err != nil {
+			fmt.Println("Error while  GetProductIDbyName:", err)
+			t.SendErrorTelegramMessage(ctx, chatID)
+			return
+		}
+		IsTrue, err := t.Usecase.CheckProductCount(ctx, BussinesId, ByNameRes.Products)
 		if err != nil {
 			fmt.Println("Error while CreateOrder:", err)
 			t.SendErrorTelegramMessage(ctx, chatID)
@@ -406,7 +443,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			statusId = nil
 		}
 		OrderCrear := entity.CreateOrder{
-			ID:       FirstRes.Products,
+			ID:       ByNameRes.Products,
 			ChatId:   chatID,
 			UserId:   message.From.ID,
 			StatusId: statusId,
@@ -733,3 +770,6 @@ func (t *Handler) SendErrorTelegramMessage(ctx context.Context, chatid int64) {
 
 	}
 }
+
+
+

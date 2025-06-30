@@ -98,9 +98,9 @@ func (r *AuthRepo) UpdateClientStatus(ctx context.Context, req *entity.UpdateCli
 	}
 	setParts = append(setParts, `updated_at = CURRENT_TIMESTAMP`)
 
-	if len(setParts) == 1 { // Faqat updated_at bo‘lsa
-		return fmt.Errorf("Yangilanish uchun hech qanday ma'lumot kiritilmadi.")
-	}
+	// if len(setParts) == 1 { // Faqat updated_at bo‘lsa
+	// 	return fmt.Errorf("Yangilanish uchun hech qanday ma'lumot kiritilmadi.")
+	// }
 
 	query := fmt.Sprintf(`UPDATE "client" SET %s WHERE from_chanel = $%d AND platform_id = $%d AND bussnes_id = $%d`, strings.Join(setParts, ", "), argPos, argPos+1, argPos+2)
 	args = append(args, req.From, req.PlatformID, req.BusinessId)

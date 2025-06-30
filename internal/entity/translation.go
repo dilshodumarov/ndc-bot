@@ -14,6 +14,12 @@ type ProductQuery struct {
 	Products     []ListProdutAi `json:"products"`
 	AiResponse   string         `json:"AiResponse,omitempty"`
 	IsAiResponse bool           `json:"IsAiResponse,omitempty"`
+	Message      string         `json:"message,omitempty"`
+}
+
+type ProductAi struct {
+	Products     []ProductOrder `json:"products"`
+	UserMessage  string         `json:"user_message"`
 }
 
 type ListProdutAi struct {
@@ -44,6 +50,7 @@ type ActionResponse struct {
 	Message              string         `json:"message"`
 	Location             string         `json:"location"`
 	UserNote             string         `json:"user_note"`
+	Product              *string        `json:"product"`
 }
 type ProductOrder struct {
 	ProductID int `json:"product_id"`

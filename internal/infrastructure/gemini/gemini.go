@@ -60,7 +60,8 @@ func (g *Gemini) FirstStep(ctx context.Context, smartnessPercent int, userInput,
 	📦 JSON Formatlar:
 	
 	⚠️ MUHIM:
-	- Barcha ID maydonlar (product_id, order_id, message_id) **string formatda** bo‘lishi kerak. Misol: '"order_id": "130"'
+	- Barcha ID maydonlar (order_id) **string formatda** bo‘lishi kerak. Misol: '"order_id": "130"'
+	- message_id va product_id int 
 	- Foydalanuvchi mahsulot qidirayotgan bo'lsa, "is_product_search": true formatni qaytaring
 	1. Oddiy javob:
 	{
@@ -70,7 +71,9 @@ func (g *Gemini) FirstStep(ctx context.Context, smartnessPercent int, userInput,
 	
 	2. Mahsulot qidirish:
 	{
-	  "is_product_search": true
+	  "is_product_search": true,
+	  "product":"mahsulotlar",
+	  "user_message": "..."
 	}
 	
 	3. Buyurtma berish:
@@ -78,7 +81,7 @@ func (g *Gemini) FirstStep(ctx context.Context, smartnessPercent int, userInput,
 	  "action": "confirm_order",
 	  "products": [
 		{
-		  "product_id": "ID",
+		  "product_id": "ID" int,
 		  "count": MIQDOR
 		}
 	  ],
@@ -292,7 +295,8 @@ Siz onlayn do'kon uchun mahsulot tanlashga yordam beruvchi AI-assistent bo'lasiz
 {
   "products": [
     {"id": MAHSULOT_ID, "user_message": "Do'kon egasi formatidagi matn"}
-  ]
+  ],
+  "message": "..."
 }
 
 ✅ Ma'lumot beruvchi javob:
@@ -345,3 +349,98 @@ Siz onlayn do'kon uchun mahsulot tanlashga yordam beruvchi AI-assistent bo'lasiz
 
 	return &query, nil
 }
+
+func (g *Gemini) GetProductIDbyName(ctx context.Context, userQuery string, productsJSON []byte) (*entity.ProductAi, error) {
+
+	fmt.Println(string(productsJSON))
+
+	prompt := fmt.Sprintf(`
+	Siz AI yordamchisisiz va foydalanuvchi so'rovlaridan buyurtma ma'lumotlarini chiqarib berasiz.
+	
+	🧑‍💻 Foydalanuvchi matni: "%s"
+	
+	📦 Mahsulotlar ro'yxati (faqat shu ro'yxatdan tanlang): %s
+	
+	🎯 Vazifa:
+	- Foydalanuvchi **qancha va qanday mahsulot** buyurtma qilayotganini aniqlang (masalan: "2 ta KFC, 1 ta Langet").
+	- Har bir mahsulot uchun 'product_id' ni mahsulot ro'yxatidan oling.
+	- Natijada quyidagi JSON formatda **faqat mahsulotlar ro'yxatini** qaytaring:
+	
+	{
+	  "products": [
+		{"product_id": ID, "count": MIQDOR},
+		{"product_id": ID, "count": MIQDOR}
+	  ],
+	  "user_message": "Foydalanuvchiga tushunarli ko‘rinishda mahsulotlar ro‘yxati va umumiy narxni qaytaring. Masalan: Siz 2 ta KFC va 1 ta Langet buyurtma qildingiz. Umumiy narx: 99 000 so'm."
+	}
+	
+	📌 Qoida:
+	- Har bir mahsulot narxi 33 000 so‘m deb hisoblang.
+	- Mahsulot nomi to‘liq bo‘lishi shart emas (masalan: "Langet" => "Langet s garnirom").
+	- Faqat 'products' va 'user_message' maydonlarini qaytaring.
+	- Faqat JSON qaytaring. Hech qanday qo‘shimcha izoh, kod yoki matn bo‘lmasin.
+	`, userQuery, string(productsJSON))
+
+	// Generate AI response
+	resp, err := g.GeminiModel.GenerateContent(ctx, genai.Text(prompt))
+	if err != nil {
+		return nil, fmt.Errorf("AI request error: %v", err)
+	}
+
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("Gemini AI response is empty")
+	}
+
+	// Extract plain text from Gemini
+	textPart, ok := resp.Candidates[0].Content.Parts[0].(genai.Text)
+	if !ok {
+		return nil, fmt.Errorf("Unexpected Gemini content type")
+	}
+
+	fmt.Println("✅ Gemini raw JSON response:", textPart)
+
+	answer := string(textPart)
+
+	answer = strings.TrimPrefix(answer, "```json")
+	answer = strings.Replace(answer, "```", "", -1)
+
+	answer = strings.TrimSpace(answer)
+
+	fmt.Println("answer: ", answer)
+
+	var query entity.ProductAi
+	if err := json.Unmarshal([]byte(answer), &query); err != nil {
+		log.Println("❌ JSON unmarshal error:", err)
+		return nil, err
+	}
+
+	fmt.Println("🔍 Extracted ProductQuery:", query)
+
+	return &query, nil
+}
+
+// Mijoz salom bersa, iliq javob qaytaring.
+
+// Agar foydalanuvchi menyu so‘rasa yoki ovqatlar haqida yozsa, quyidagi matnni `user_message` maydoniga joylashtiring va "is_product_search": true formatdagi javob qaytaring.
+
+// 📆 Juma Menyusi: 27.06.2025
+// 🍽 SET MENYULAR – har biri 33 000 so‘m
+
+// Set:
+// 1️⃣ Turkcha kotlet + salat + non
+// 2️⃣ Go'shtli jarkob + salat + non
+// 3️⃣ KFC + salat + non
+// 4️⃣ Langet s garnirom + salat + non
+
+// Agar foydalanuvchi buyurtma bermoqchi bo‘lsa, mahsulot IDlarini va miqdorini aniqlab, `confirm_order` formatini qaytaring.
+
+// Xizmat shartlarini kerakli holatlarda tushuntiring:
+// - Har ovqat: 33 000 so‘m
+// - 5+ ta ovqat: yetkazib berish BEPUL
+// - 8+ ta ovqat: 1.5L CocaCola sovg‘a
+// - To‘lov: naqd yoki karta (P2P)
+// - Yetkazib berish: har kuni 13:30 gacha
+
+// Qo‘shimcha ma'lumotlar: @zamzam_taom_dastavka | +998 90 041 90 09
+// Kundalik menyular: @Zamzam_taom
+

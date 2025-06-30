@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (t *Handler) CreateOrder(ctx context.Context, res *entity.CreateOrder) error {
+func (t *Handler) CreateOrder(ctx context.Context, res *entity.CreateOrder) (int64,error) {
 	var products entity.CreateProductOrder
 	order := entity.Order{
 		UserID:       res.UserId,
@@ -30,7 +30,7 @@ func (t *Handler) CreateOrder(ctx context.Context, res *entity.CreateOrder) erro
 				ChatID:  res.ChatId,
 				Message: fmt.Sprintf("❌ Mahsulot topilmadi (ID: %d).", res.ID[i]),
 			})
-			return err
+			return 0,err
 		}
 		products.Id = product.ID
 		products.Count = res.ID[i].Count
@@ -45,7 +45,7 @@ func (t *Handler) CreateOrder(ctx context.Context, res *entity.CreateOrder) erro
 	if err != nil {
 		fmt.Println("❌ Buyurtma yaratishda xatolik: " + err.Error())
 		t.SendErrorTelegramMessage(ctx, res.ChatId)
-		return err
+		return 0,err
 	}
 
 	if orderResponse.Message == "norows" {
@@ -57,13 +57,13 @@ func (t *Handler) CreateOrder(ctx context.Context, res *entity.CreateOrder) erro
 		if err != nil {
 			fmt.Println("❌ Redisda state saqlashda xatolik: " + err.Error())
 			t.SendErrorTelegramMessage(ctx, res.ChatId)
-			return err
+			return 0,err
 		}
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
 			ChatID:  res.ChatId,
 			Message: "Ismingizni kiriting:",
 		})
-		return err
+		return 0,err
 	}
 	platformID := fmt.Sprintf("%d", order.UserID)
 	err = t.Usecase.UpdateClientStatus(ctx, &entity.UpdateClientStatusRequest{
@@ -76,19 +76,19 @@ func (t *Handler) CreateOrder(ctx context.Context, res *entity.CreateOrder) erro
 	if err != nil {
 		fmt.Println("Update statusda hatolik: " + err.Error())
 		t.SendErrorTelegramMessage(ctx, res.ChatId)
-		return err
+		return 0,err
 	}
-	response := fmt.Sprintf(
-		"✅ Buyurtmangiz muvaffaqiyatli rasmiylashtirildi!\n\n🆔 Buyurtma Id: #%d\n💵 Umumiy narx: %d so'm\n\nEndi locatsiangizni yuboring.",
-		orderResponse.OrderIdSerial,
-		order.TotalPrice,
-	)
-	t.SendTelegramMessage(ctx, entity.SendMessageModel{
-		ChatID:  res.ChatId,
-		Message: response,
-	})
+	// response := fmt.Sprintf(
+	// 	"✅ Buyurtmangiz muvaffaqiyatli rasmiylashtirildi!\n\n🆔 Buyurtma Id: #%d\n💵 Umumiy narx: %d so'm\n\nEndi locatsiangizni yuboring.",
+	// 	orderResponse.OrderIdSerial,
+	// 	order.TotalPrice,
+	// )
+	// t.SendTelegramMessage(ctx, entity.SendMessageModel{
+	// 	ChatID:  res.ChatId,
+	// 	Message: response,
+	// })
 
-	return nil
+	return orderResponse.OrderIdSerial,nil
 
 }
 

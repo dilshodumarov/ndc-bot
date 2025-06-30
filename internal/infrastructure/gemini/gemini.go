@@ -294,7 +294,7 @@ Siz onlayn do'kon uchun mahsulot tanlashga yordam beruvchi AI-assistent bo'lasiz
 
 {
   "products": [
-    {"id": MAHSULOT_ID, "user_message": "Do'kon egasi formatidagi matn"}
+    {"id": MAHSULOT_ID, "user_message": "🍽 product nomi qoyilsin /n id:"product_id""}
   ],
   "message": "..."
 }

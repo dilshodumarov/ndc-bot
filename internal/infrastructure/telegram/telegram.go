@@ -240,10 +240,13 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		return
 	}
 	ResponseToken := EstimateTokenCount(string(ByteRes))
-	t.SendTelegramMessage(ctx, entity.SendMessageModel{
-		ChatID:  chatID,
-		Message: FirstRes.UserMessage,
-	})
+	if FirstRes.Action!="confirm_order"{
+		t.SendTelegramMessage(ctx, entity.SendMessageModel{
+			ChatID:  chatID,
+			Message: FirstRes.UserMessage,
+		})
+	}
+	
 	if FirstRes.IsAiResponse {
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
 			ChatID:  chatID,
@@ -279,19 +282,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			t.SendErrorTelegramMessage(ctx, chatID)
 			return
 		}
-		SettingsAi.PromtProdcut+=`Agar JSON javobida "products" mavjud bo‘lsa:
-
-- "message" maydonining **oxiriga** faqat quyidagi matnni qo‘shing:
-
-🎁 BONUSLAR:  
-🥤 8 ta va undan ortiq buyurtma – 1.5L Coca-Cola bepul!  
-🚚 5 ta va undan ortiq buyurtma – dastavka bepul!
-
-⛔ Hech qanday boshqa so‘z, jumla yoki izoh **qo‘shmang**.  
-⛔ "Siz tanlagan mahsulotlar", "Siz uchun", "O‘xshash" kabi iboralarni **yozma**.  
-⛔ Faqat berilgan matnni *xuddi shu ko‘rinishda* 'message' maydoniga joylashtiring.
-
-Agar "products" mavjud bo‘lmasa — bu BONUSLAR matnini **umuman yozma**.
+		SettingsAi.PromtProdcut=`'message': "Qaysi ovqatdan nechta kerak yozib yuborsangiz buyurtmani olib qolar edim"
 .
 
 				
@@ -448,13 +439,16 @@ Agar "products" mavjud bo‘lmasa — bu BONUSLAR matnini **umuman yozma**.
 			UserId:   message.From.ID,
 			StatusId: statusId,
 		}
-		err = t.CreateOrder(ctx, &OrderCrear)
+		_,err = t.CreateOrder(ctx, &OrderCrear)
 		if err != nil {
 			fmt.Println("Error while CreateOrder:", err)
 			t.SendErrorTelegramMessage(ctx, chatID)
 			return
 		}
-
+		t.SendTelegramMessage(ctx, entity.SendMessageModel{
+			ChatID:  chatID,
+			Message: FirstRes.UserMessage,
+		})
 		return
 	}
 

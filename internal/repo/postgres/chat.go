@@ -50,31 +50,40 @@ func (r *ChatRepo) GetAllChatId(ctx context.Context, businessId string) ([]int64
 
 func (r *ChatRepo) GetChatHistory(ctx context.Context, req *entity.GetChatHistoryRequest) ([]map[string]interface{}, error) {
 	var (
-		query string
-		rows  pgx.Rows
-		err   error
+		query      string
+		rows       pgx.Rows
+		err        error
+		dateFilter string
+		args       []interface{}
 	)
 
-	if req.Phone != "" {
-		query = `
-			SELECT ch.message_id, ch.message, ch.ai_response, ch.reply_to_message_id, ch.created_at, r.message AS reply_message
-			FROM chat_history ch
-			LEFT JOIN chat_history r ON ch.reply_to_message_id = r.message_id
-			WHERE ch.phone = $1
-			ORDER BY ch.created_at DESC
-		`
-		rows, err = r.Pool.Query(ctx, query, req.Phone)
-	} else {
-		query = `
-			SELECT ch.message_id, ch.message, ch.ai_response, ch.reply_to_message_id, ch.created_at, r.message AS reply_message
-			FROM chat_history ch
-			LEFT JOIN chat_history r ON ch.reply_to_message_id = r.message_id
-			WHERE ch.business_id = $1 AND ch.chat_id = $2
-			ORDER BY ch.created_at DESC
-		`
-		rows, err = r.Pool.Query(ctx, query, req.BusinessID, req.ChatID)
+	// Date filtering
+	if req.Days > 0 {
+		dateFilter = "AND ch.created_at >= NOW() - INTERVAL '%d days'"
+		dateFilter = fmt.Sprintf(dateFilter, req.Days)
 	}
 
+	if req.Phone != "" {
+		query = fmt.Sprintf(`
+			SELECT ch.message_id, ch.message, ch.ai_response, ch.reply_to_message_id, ch.created_at, r.message AS reply_message
+			FROM chat_history ch
+			LEFT JOIN chat_history r ON ch.reply_to_message_id = r.message_id
+			WHERE ch.phone = $1 %s
+			ORDER BY ch.created_at DESC
+		`, dateFilter)
+		args = append(args, req.Phone)
+	} else {
+		query = fmt.Sprintf(`
+			SELECT ch.message_id, ch.message, ch.ai_response, ch.reply_to_message_id, ch.created_at, r.message AS reply_message
+			FROM chat_history ch
+			LEFT JOIN chat_history r ON ch.reply_to_message_id = r.message_id
+			WHERE ch.business_id = $1 AND ch.chat_id = $2 %s
+			ORDER BY ch.created_at DESC
+		`, dateFilter)
+		args = append(args, req.BusinessID, req.ChatID)
+	}
+
+	rows, err = r.Pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("ChatRepo - GetChatHistory - Query: %w", err)
 	}
@@ -82,7 +91,7 @@ func (r *ChatRepo) GetChatHistory(ctx context.Context, req *entity.GetChatHistor
 
 	var (
 		chatHistory  []map[string]interface{}
-		tokenBudget  = req.TokenLimit // <-- yangi: token limiti
+		tokenBudget  = req.TokenLimit
 		tokenCounter int
 	)
 
@@ -97,7 +106,6 @@ func (r *ChatRepo) GetChatHistory(ctx context.Context, req *entity.GetChatHistor
 			return nil, fmt.Errorf("ChatRepo - GetChatHistory - Scan: %w", err)
 		}
 
-		// AI javobi
 		if aiResponse.Valid && aiResponse.String != "" {
 			tokens := len([]rune(aiResponse.String))
 			if tokenCounter+tokens > tokenBudget {
@@ -112,7 +120,6 @@ func (r *ChatRepo) GetChatHistory(ctx context.Context, req *entity.GetChatHistor
 			})
 		}
 
-		// User xabari
 		if message.Valid && message.String != "" {
 			tokens := len([]rune(message.String))
 			if tokenCounter+tokens > tokenBudget {
@@ -132,13 +139,14 @@ func (r *ChatRepo) GetChatHistory(ctx context.Context, req *entity.GetChatHistor
 		return nil, fmt.Errorf("ChatRepo - GetChatHistory - Rows: %w", err)
 	}
 
-	// Chatni eng so‘nggi tartibda olish (oldingi bo‘lsa oxirgi yozilganlar oxirida bo‘lardi)
+	// Reverse chat order
 	for i, j := 0, len(chatHistory)-1; i < j; i, j = i+1, j-1 {
 		chatHistory[i], chatHistory[j] = chatHistory[j], chatHistory[i]
 	}
 
 	return chatHistory, nil
 }
+
 
 func (r *ChatRepo) CreateChatHistory(ctx context.Context, chatHistory *entity.ChatHistory) error {
 	query := `

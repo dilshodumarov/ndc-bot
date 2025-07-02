@@ -109,7 +109,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		}
 
 		// Agar hozirgi message image bo‘lsa (yangi yuborilgan)
-		if message.Photo != nil && len(message.Photo) > 0 {
+		if len(message.Photo) > 0 {
 			photo := message.Photo[len(message.Photo)-1]
 			fileConfig, err := t.TelegramBot.GetFile(tgbotapi.FileConfig{FileID: photo.FileID})
 			if err != nil {
@@ -119,6 +119,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			link := fileConfig.Link(t.TelegramBot.Token)
 			userInput += "\nimage_url: " + link
 		}
+
 	}
 
 	chatHistory, err := t.Usecase.GetChatHistory(ctx, &entity.GetChatHistoryRequest{
@@ -131,7 +132,14 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		t.SendErrorTelegramMessage(ctx, chatID)
 		return
 	}
+	if message.Location != nil {
+		latitude := message.Location.Latitude
+		longitude := message.Location.Longitude
+		fmt.Printf("Lokatsiya: Lat: %f, Lng: %f\n", latitude, longitude)
 
+		locationURL := fmt.Sprintf("https://www.google.com/maps?q=%f,%f", latitude, longitude)
+		userInput = locationURL
+	}
 	err = t.Usecase.CreateChatHistory(ctx, &entity.ChatHistory{
 		MessageId:        MessageId,
 		BusinessId:       BussinesId,
@@ -142,14 +150,6 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		Platform:         "bot",
 	})
 
-	if message.Location != nil {
-		latitude := message.Location.Latitude
-		longitude := message.Location.Longitude
-		fmt.Printf("Lokatsiya: Lat: %f, Lng: %f\n", latitude, longitude)
-
-		locationURL := fmt.Sprintf("https://www.google.com/maps?q=%f,%f", latitude, longitude)
-		userInput = locationURL
-	}
 	Message := entity.SendMessage{
 		Message:          userInput,
 		UserId:           t.UserId,
@@ -240,13 +240,13 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		return
 	}
 	ResponseToken := EstimateTokenCount(string(ByteRes))
-	if FirstRes.Action!="confirm_order"{
+	if FirstRes.Action != "confirm_order" {
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
 			ChatID:  chatID,
 			Message: FirstRes.UserMessage,
 		})
 	}
-	
+
 	if FirstRes.IsAiResponse {
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
 			ChatID:  chatID,
@@ -266,8 +266,8 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		}
 		return
 	}
-    if FirstRes.Product!=nil{
-		userInput=*FirstRes.Product
+	if FirstRes.Product != nil {
+		userInput = *FirstRes.Product
 	}
 	if FirstRes.IsProductSearch {
 		ListProducts, err := t.Usecase.ListProductsForAI(ctx, BussinesId)
@@ -282,7 +282,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			t.SendErrorTelegramMessage(ctx, chatID)
 			return
 		}
-		SettingsAi.PromtProdcut=`'message': "Qaysi ovqatdan nechta kerak yozib yuborsangiz buyurtmani olib qolar edim"
+		SettingsAi.PromtProdcut = `'message': "Qaysi ovqatdan nechta kerak yozib yuborsangiz buyurtmani olib qolar edim"
 .
 
 				
@@ -351,7 +351,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 
 		}
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
-			ChatID: chatID,
+			ChatID:  chatID,
 			Message: FoudnProducts.Message,
 		})
 
@@ -387,6 +387,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		t.SendErrorTelegramMessage(ctx, chatID)
 		return
 	}
+
 	if FirstRes.Action == "confirm_order" {
 		ListProducts, err := t.Usecase.ListProductsForAI(ctx, BussinesId)
 		if err != nil {
@@ -400,10 +401,17 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			t.SendErrorTelegramMessage(ctx, chatID)
 			return
 		}
-		ByNameRes,err:=t.GeminiModel.GetProductIDbyName(ctx,userInput,listProduct)
+		ByNameRes, err := t.GeminiModel.GetProductIDbyName(ctx, userInput, listProduct)
 		if err != nil {
 			fmt.Println("Error while  GetProductIDbyName:", err)
 			t.SendErrorTelegramMessage(ctx, chatID)
+			return
+		}
+		if !ByNameRes.IsTrue {
+			t.SendTelegramMessage(ctx, entity.SendMessageModel{
+				ChatID:  chatID,
+				Message: ByNameRes.UserMessage,
+			})
 			return
 		}
 		IsTrue, err := t.Usecase.CheckProductCount(ctx, BussinesId, ByNameRes.Products)
@@ -429,7 +437,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			return
 
 		}
-		statusId, found := FindOrderStatusByName(OrderStatus, "buyurtma_qilmoqchi")
+		statusId, found := FindOrderStatusByName(OrderStatus, "olishga_tayyor")
 		if !found {
 			statusId = nil
 		}
@@ -439,11 +447,22 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 			UserId:   message.From.ID,
 			StatusId: statusId,
 		}
-		_,err = t.CreateOrder(ctx, &OrderCrear)
+		OrderSerialId, err := t.CreateOrder(ctx, &OrderCrear)
 		if err != nil {
 			fmt.Println("Error while CreateOrder:", err)
 			t.SendErrorTelegramMessage(ctx, chatID)
 			return
+		}
+		OrderChat := "order_id: " + strconv.Itoa(int(OrderSerialId))
+		history := &entity.ChatHistory{
+			MessageId:  MessageId,
+			BusinessId: t.BusinessId,
+			ChatID:     chatID,
+			AIResponse: OrderChat,
+			Platform:   "bot",
+		}
+		if err := t.Usecase.CreateChatHistory(ctx, history); err != nil {
+			fmt.Println("Error while creating chat history:", err)
 		}
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
 			ChatID:  chatID,
@@ -764,6 +783,3 @@ func (t *Handler) SendErrorTelegramMessage(ctx context.Context, chatid int64) {
 
 	}
 }
-
-
-

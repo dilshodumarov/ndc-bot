@@ -21,7 +21,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"github.com/robfig/cron/v3"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -118,33 +117,6 @@ func Run(cfg *config.Config) {
 		}(bot)
 	}
 
-	c := cron.New()
-	c.AddFunc("0 0 * * *", func() {
-		fmt.Println("Cron ishladi")
-
-		orders, err := translationUseCase.GetUsersByLastOrder(context.Background())
-		if err != nil {
-			fmt.Println("Xatolik:", err)
-			return
-		}
-
-		for i := 0; i < len(orders); i++ {
-			order := orders[i]
-			bot := GetBotByGuid(order.BotGuid) // ← Botni to‘g‘ri topamiz
-
-			if bot != nil {
-
-				bot.SendTelegramMessage(context.Background(), entity.SendMessageModel{
-					ChatID:  order.ChatId,
-					Message: "Buyurtma qilining!!!",
-				})
-			} else {
-				fmt.Printf("Bot topilmadi: %s\n", order.BotGuid)
-			}
-		}
-	})
-
-	c.Start()
 	r := gin.Default()
 	api.NewTelegramRoutes(*telegramUscase, *instagramUscase, cfg, r)
 	api.NewRouter(r)

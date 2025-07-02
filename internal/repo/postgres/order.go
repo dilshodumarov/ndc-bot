@@ -232,7 +232,7 @@ func (r *OrderRepo) CreateOrder(ctx context.Context, order entity.Order) (*entit
 		}
 
 		// Agar buyurtma real bo‘lsa, mahsulotdan ayiramiz
-		if order.Status == "buyurtma_qilmoqchi" {
+		if order.Status == "olishga_tayyor" {
 			_, err = tx.Exec(ctx, `
 				UPDATE product
 				SET count = count - $1, updated_at = CURRENT_TIMESTAMP

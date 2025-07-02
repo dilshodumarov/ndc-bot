@@ -15,15 +15,15 @@ type Client struct {
 }
 
 type UpdateClientStatusRequest struct {
-	PlatformID  string `json:"platform_id"`
-	From        string
-	BusinessId  string
-	Goal        string
-	OrderStatus string
-	Location    string
-	StopStatus  *bool
-	IsPauzse    *bool
-	StopTime    *time.Time
+	PlatformID   string `json:"platform_id"`
+	From         string
+	BusinessId   string
+	Goal         string
+	OrderStatus  string
+	Location     string
+	StopStatus   *bool
+	IsPauzse     *bool
+	StopTime     *time.Time
 	LocationText string
 }
 
@@ -50,8 +50,8 @@ type BotIntegration struct {
 }
 
 type IntegrationResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code       int    `json:"code"`
+	Message    string `json:"message"`
 	Message_id int
 }
 
@@ -61,7 +61,6 @@ type IntegrationResponseInsta struct {
 	Code        int    `json:"code,omitempty"`
 	Message     string `json:"message,omitempty"`
 }
-
 
 type BotNotification struct {
 	Guid      string `json:"Guid"`
@@ -122,6 +121,7 @@ type GetChatHistoryRequest struct {
 	ChatID     int64
 	TokenLimit int
 	Phone      string
+	Days       int
 }
 
 type SendMessageModel struct {

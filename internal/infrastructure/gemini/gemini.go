@@ -39,7 +39,7 @@ func NewGeminiModel(cfg *config.Config) (*Gemini, error) {
 }
 
 func (g *Gemini) FirstStep(ctx context.Context, smartnessPercent int, userInput, ownerCustomPrompts, orderProcessingRules string, chatHistory []map[string]interface{}) (*entity.ActionResponse, error) {
-
+	fmt.Println(1111,userInput)
 	prompt := fmt.Sprintf(`
 	🧠 Aqllilik darajasi: %d%%
 	
@@ -372,9 +372,11 @@ func (g *Gemini) GetProductIDbyName(ctx context.Context, userQuery string, produ
 		{"product_id": ID, "count": MIQDOR}
 	  ],
 	  "user_message": "Foydalanuvchiga tushunarli ko‘rinishda mahsulotlar ro‘yxati va umumiy narxni qaytaring. Masalan: Siz 2 ta KFC va 1 ta Langet buyurtma qildingiz. Umumiy narx: 99 000 so'm."
+	  "is_true": true
 	}
 	
 	📌 Qoida:
+	- Foydalanuvchi talab qilgan miqdor mavjud mahsulotdan ko‘p bo‘lsa, is_true = false qilib, user_messageda ogohlantiring va boshqa mahsulotlarni tavsiya qiling.
 	- Har bir mahsulot narxi 33 000 so‘m deb hisoblang.
 	- Mahsulot nomi to‘liq bo‘lishi shart emas (masalan: "Langet" => "Langet s garnirom").
 	- Faqat 'products' va 'user_message' maydonlarini qaytaring.
@@ -443,4 +445,5 @@ func (g *Gemini) GetProductIDbyName(ctx context.Context, userQuery string, produ
 
 // Qo‘shimcha ma'lumotlar: @zamzam_taom_dastavka | +998 90 041 90 09
 // Kundalik menyular: @Zamzam_taom
+
 

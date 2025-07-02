@@ -18,7 +18,7 @@ func (t *Handler) CreateOrder(ctx context.Context, res *entity.CreateOrder) (int
 		StatusNumber: 2,
 		Platform:     "bot",
 	}
-
+	
 	for i := 0; i < len(res.ID); i++ {
 
 		product, err := t.Usecase.GetProductById(ctx, entity.GetProductByIDRequest{

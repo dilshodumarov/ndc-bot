@@ -18,8 +18,9 @@ type ProductQuery struct {
 }
 
 type ProductAi struct {
-	Products     []ProductOrder `json:"products"`
-	UserMessage  string         `json:"user_message"`
+	Products    []ProductOrder `json:"products"`
+	UserMessage string         `json:"user_message"`
+	IsTrue      bool           `json:"is_true"`
 }
 
 type ListProdutAi struct {

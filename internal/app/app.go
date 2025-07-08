@@ -8,6 +8,7 @@ import (
 	"ndc/ai_bot/api"
 	"ndc/ai_bot/config"
 	"ndc/ai_bot/internal/entity"
+	"ndc/ai_bot/internal/infrastructure/chatgpt"
 	"ndc/ai_bot/internal/infrastructure/gemini"
 	instagram "ndc/ai_bot/internal/infrastructure/instagram"
 	"ndc/ai_bot/internal/infrastructure/telegram"
@@ -65,15 +66,22 @@ func Run(cfg *config.Config) {
 	newGeminiModel, err := gemini.NewGeminiModel(cfg)
 	if err != nil {
 		l.Fatal(fmt.Errorf("app - Run - gemini.NewGeminiModel: %w", err))
+		return
 	}
 
+	NewChatgptModel, err := chatgpt.NewChatGPTModel(cfg)
+	if err != nil {
+		l.Fatal(fmt.Errorf("app - Run - gemini.NewChatgptModel: %w", err))
+		return
+	}
+	fmt.Println(1111,NewChatgptModel)
 	// Get bot integrations
 	res, err := translationUseCase.AuthRepo.GetBotIntegrations(context.Background())
 	if err != nil {
 		log.Fatalf("Xatolik: bot integrationlarni olishda muammo: %v", err)
 		return
 	}
-	telegramUscase, err := telegramuser.NewHandler(cfg, newGeminiModel, redisUscase, translationUseCase)
+	telegramUscase, err := telegramuser.NewHandler(cfg, newGeminiModel, NewChatgptModel, redisUscase, translationUseCase)
 	if err != nil {
 		log.Fatalf("Xatolik: telegramUscase: %v", err)
 		return
@@ -83,11 +91,11 @@ func Run(cfg *config.Config) {
 		log.Fatalf("Xatolik: telegramUscase: %v", err)
 		return
 	}
-	telegram.CreateGlobalVar(newGeminiModel, translationUseCase, redisUscase)
+	telegram.CreateGlobalVar(newGeminiModel, NewChatgptModel,translationUseCase, redisUscase)
 	for _, bot := range res {
 		go func(bot *entity.BotIntegration) {
 
-			tgBot, err := telegram.NewHandler(cfg, bot.Token, bot.BusinessID, bot.UserID, newGeminiModel, translationUseCase, redisUscase)
+			tgBot, err := telegram.NewHandler(cfg, bot.Token, bot.BusinessID, bot.UserID, newGeminiModel, NewChatgptModel,translationUseCase, redisUscase)
 			if err != nil {
 				log.Printf("Bot yaratishda xatolik (BusinessID: %s): %v", bot.BusinessID, err)
 				return

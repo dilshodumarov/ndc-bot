@@ -7,6 +7,7 @@ import (
 	"log"
 	"ndc/ai_bot/config"
 	"ndc/ai_bot/internal/entity"
+	"ndc/ai_bot/internal/infrastructure/chatgpt"
 	"ndc/ai_bot/internal/infrastructure/gemini"
 	uscase "ndc/ai_bot/internal/usecase/postgres"
 	uscaseredis "ndc/ai_bot/internal/usecase/redis"
@@ -21,6 +22,7 @@ var (
 	translationUseCase *uscase.UseCase
 	redisUscase        *uscaseredis.Uscase
 	errorMEssage       string
+	newchatgptmodel    *chatgpt.ChatGpt
 )
 
 var BotMap = make(map[string]*Handler)
@@ -239,6 +241,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		t.SendErrorTelegramMessage(ctx, chatID)
 		return
 	}
+
 	ResponseToken := EstimateTokenCount(string(ByteRes))
 	if FirstRes.Action != "confirm_order" {
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
@@ -284,7 +287,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		}
 		SettingsAi.PromtProdcut = `'message': "Qaysi ovqatdan nechta kerak yozib yuborsangiz buyurtmani olib qolar edim"
 .
-
+		
 				
 `
 		FoudnProducts, err := t.GeminiModel.ExtractProductName(ctx, userInput, SettingsAi.PromtProdcut, listProductStr, chatHistory)
@@ -467,6 +470,7 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 		t.SendTelegramMessage(ctx, entity.SendMessageModel{
 			ChatID:  chatID,
 			Message: FirstRes.UserMessage,
+			// ReplyToMessageID: &FirstRes.MessageID,
 		})
 		return
 	}
@@ -680,7 +684,7 @@ func (t *Handler) handleRegistrationInput(message *tgbotapi.Message, chatID int6
 }
 
 func AddNewBot(req entity.BotIntegration) error {
-	tgBot, err := NewHandler(&config.Config{}, req.Token, req.BusinessID, req.UserID, newGeminiModel, translationUseCase, redisUscase)
+	tgBot, err := NewHandler(&config.Config{}, req.Token, req.BusinessID, req.UserID, newGeminiModel, newchatgptmodel, translationUseCase, redisUscase)
 	if err != nil {
 		log.Printf("Bot yaratishda xatolik (BusinessID: %s): %v", req.BusinessID, err)
 		return err
@@ -728,10 +732,11 @@ func StopBot(guid string) error {
 	return nil
 }
 
-func CreateGlobalVar(geminiModel *gemini.Gemini, UseCase *uscase.UseCase, redisUs *uscaseredis.Uscase) {
+func CreateGlobalVar(geminiModel *gemini.Gemini, chatgpt *chatgpt.ChatGpt, UseCase *uscase.UseCase, redisUs *uscaseredis.Uscase) {
 	newGeminiModel = geminiModel
 	translationUseCase = UseCase
 	redisUscase = redisUs
+	newchatgptmodel = chatgpt
 }
 
 func AddBotMap(guid string, tgBot *Handler) {

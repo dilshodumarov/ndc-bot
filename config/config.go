@@ -18,6 +18,7 @@ type (
 		Telegram Telegram
 		JWT       JWT
 		Redis     Redis
+		ChatGpt   ChatGpt
 	}
 
 	JWT struct {
@@ -43,7 +44,10 @@ type (
 	Gemini struct {
 		APIKey string `env:"GEMINI_API_KEY,required"`
 	}
-
+	ChatGpt struct {
+		APIKey string `env:"CHAT_GPT,required"`
+	}
+	
 	Telegram struct {
 		Token string `env:"TELEGRAM_BOT_TOKEN,required"`
 	}

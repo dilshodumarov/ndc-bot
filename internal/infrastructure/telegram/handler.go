@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"ndc/ai_bot/config"
 	"ndc/ai_bot/internal/entity"
+	"ndc/ai_bot/internal/infrastructure/chatgpt"
 	"ndc/ai_bot/internal/infrastructure/gemini"
 	uscase "ndc/ai_bot/internal/usecase/postgres"
 	redis "ndc/ai_bot/internal/usecase/redis"
@@ -21,12 +22,11 @@ type Handler struct {
 	UserId       string
 	ClientStates map[int64]*entity.ClientState
 	RedisUsecase *redis.Uscase
-
-	cancelFunc context.CancelFunc 
+	ChatGpt      *chatgpt.ChatGpt
+	cancelFunc   context.CancelFunc
 }
 
-
-func NewHandler(cfg *config.Config, token,  BusinessId,UserId string, geminiModel *gemini.Gemini, usecase *uscase.UseCase, Redis *redis.Uscase) (*Handler, error) {
+func NewHandler(cfg *config.Config, token, BusinessId, UserId string, geminiModel *gemini.Gemini, ChatGpt *chatgpt.ChatGpt, usecase *uscase.UseCase, Redis *redis.Uscase) (*Handler, error) {
 	tgBot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating Telegram bot: %w", err)
@@ -42,5 +42,6 @@ func NewHandler(cfg *config.Config, token,  BusinessId,UserId string, geminiMode
 		ClientStates: make(map[int64]*entity.ClientState),
 		RedisUsecase: Redis,
 		UserId:       UserId,
+		ChatGpt:      ChatGpt,
 	}, nil
 }

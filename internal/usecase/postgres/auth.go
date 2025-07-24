@@ -62,3 +62,12 @@ func (uc *UseCase) CreateTokenUsage(ctx context.Context, usage *entity.ClientTok
 }
 
 
+
+func (uc *UseCase) CheckClient(ctx context.Context, platformID, businessid string) (bool, error){
+	check,err := uc.AuthRepo.CheckClient(ctx, platformID,businessid)
+	if err != nil {
+		return check,fmt.Errorf("TranslationUseCase - CheckClient %w", err)
+	}
+
+	return check,nil
+}

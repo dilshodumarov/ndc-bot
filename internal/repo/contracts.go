@@ -34,6 +34,7 @@ type (
 		GetResponseByCommand(ctx context.Context, ownerID, command string) (string, error)
 		UpdateClientStatus(ctx context.Context, req *entity.UpdateClientStatusRequest) error
 		CreateTokenUsage(ctx context.Context, usage *entity.ClientTokenUsage) error
+		CheckClient(ctx context.Context, platformID, businessid string) (bool, error)
 	}
 
 	ChatRepo interface {

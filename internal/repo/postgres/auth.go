@@ -2,11 +2,14 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"ndc/ai_bot/internal/entity"
 	"ndc/ai_bot/pkg/postgres"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // AuthRepo -.
@@ -191,4 +194,23 @@ func (r *AuthRepo) CreateTokenUsage(ctx context.Context, usage *entity.ClientTok
 	}
 
 	return nil
+}
+
+func (r *AuthRepo) CheckClient(ctx context.Context, platformID, businessid string) (bool, error) {
+	query := `
+		SELECT 1 
+		FROM client 
+		WHERE platform_id = $1 AND bussnes_id = $2 
+		LIMIT 1
+	`
+	var exists int
+	err := r.Pool.QueryRow(ctx, query, platformID, businessid).Scan(&exists)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil // client topilmadi
+		}
+		return false, fmt.Errorf("AuthRepo - CheckClient - QueryRow: %w", err)
+	}
+
+	return true, nil // client mavjud
 }

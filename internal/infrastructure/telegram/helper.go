@@ -15,35 +15,36 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (t *Handler) showWelcomeMessage(chatID int64) {
-	btn := tgbotapi.NewKeyboardButton("/register")
-	btnRequest := tgbotapi.NewReplyKeyboard([]tgbotapi.KeyboardButton{btn})
-	msg := tgbotapi.NewMessage(chatID, "Assalomu alaykum botga hush kelipsiz.")
-	msg.ReplyMarkup = btnRequest
-	//msg.ParseMode = "MarkdownV2"
-	t.TelegramBot.Send(msg)
-}
-
-func (t *Handler) startRegistration(chatID int64) {
-	state := &entity.ClientState{
-		State: "first_name",
-	}
-	t.ClientStates[chatID] = state
-
-	err := t.RedisUsecase.RedisRepo.Set(context.TODO(), chatID, state)
-	if err != nil {
-		fmt.Println("❌ Redisga yozishda xatolik: " + err.Error())
-		t.SendTelegramMessage(context.TODO(), entity.SendMessageModel{
-			ChatID:  chatID,
-			Message: "❌ Nimadur xato bo‘ldi. Iltimos, qaytadan urinib ko‘ring yoki admin bilan bog‘laning.",
-		})
+func (t *Handler) showWelcomeMessage(ctx context.Context, message *tgbotapi.Message, clientID, businessID string) {
+	welcomeMsg := tgbotapi.NewMessage(message.Chat.ID, "Assalomu alaykum, botga xush kelibsiz.")
+	if _, err := t.TelegramBot.Send(welcomeMsg); err != nil {
+		fmt.Println("error sending welcome message: " + err.Error())
+		t.SendErrorTelegramMessage(ctx, message.Chat.ID)
 		return
 	}
 
-	t.SendTelegramMessage(context.Background(), entity.SendMessageModel{
-		ChatID:  chatID,
-		Message: "Ismingizni kiriting:",
-	})
+	check, err := t.Usecase.CheckClient(ctx, clientID, businessID)
+	if err != nil {
+		fmt.Println("error CheckClient: " + err.Error())
+		t.SendErrorTelegramMessage(ctx, message.Chat.ID)
+		return
+	}
+
+	if !check {
+		client := entity.Client{
+			PlatformID: clientID,
+			BusinessId: businessID,
+			ChatId:     message.Chat.ID,
+			UserName:   message.From.UserName,
+			FirstName:  message.From.FirstName,
+		}
+
+		if _, err := t.Usecase.CreateClient(ctx, client); err != nil {
+			fmt.Println("error CreateClient: " + err.Error())
+			t.SendErrorTelegramMessage(ctx, message.Chat.ID)
+			return
+		}
+	}
 }
 
 func (t *Handler) SendTelegramMessage(ctx context.Context, data entity.SendMessageModel) {
@@ -107,7 +108,6 @@ func (t *Handler) SendTelegramMessage(ctx context.Context, data entity.SendMessa
 
 	}
 }
-
 
 func safeDereference(ptr *int) int {
 	if ptr != nil {
@@ -323,16 +323,16 @@ func SendMessageBot(ctx context.Context, req entity.SendMessage) error {
 		log.Printf("Telegram GetIntegrationSettingsByOwnerID: %v", err)
 		return err
 	}
-	if settings.IsPauze{
+	if settings.IsPauze {
 		err = botHandler.Usecase.UpdateClientStatus(ctx, &entity.UpdateClientStatusRequest{
 			PlatformID: strconv.Itoa(int(req.Chatid)),
 			BusinessId: req.BusinessId,
 			From:       "bot",
-		    IsPauzse:   boolPtr(true),
+			IsPauzse:   boolPtr(true),
 		})
 		if err != nil {
 			log.Printf("Telegram UpdateClientStatus: %v", err)
-			botHandler.SendErrorTelegramMessage(ctx,req.Chatid)
+			botHandler.SendErrorTelegramMessage(ctx, req.Chatid)
 			return err
 		}
 		log.Printf("Bot sent message: %s", req.Message)
@@ -341,7 +341,7 @@ func SendMessageBot(ctx context.Context, req entity.SendMessage) error {
 	if !settings.IsStop {
 		stopUntilDuration := time.Duration(settings.StopUntil) * time.Hour
 		stopTime := time.Now().Add(stopUntilDuration)
-	
+
 		err = botHandler.Usecase.UpdateClientStatus(ctx, &entity.UpdateClientStatusRequest{
 			PlatformID: strconv.Itoa(int(req.Chatid)),
 			BusinessId: req.BusinessId,
@@ -351,7 +351,7 @@ func SendMessageBot(ctx context.Context, req entity.SendMessage) error {
 		})
 		if err != nil {
 			log.Printf("Telegram UpdateClientStatus: %v", err)
-			botHandler.SendErrorTelegramMessage(ctx,req.Chatid)
+			botHandler.SendErrorTelegramMessage(ctx, req.Chatid)
 			return err
 		}
 	}
@@ -395,5 +395,5 @@ func FindOrderStatusByName(list []*entity.OrderStatus, name string) (*string, bo
 			return &status.GUID, true
 		}
 	}
-	return  nil, false 
+	return nil, false
 }

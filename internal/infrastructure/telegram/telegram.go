@@ -194,23 +194,10 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 	}
 
 	fmt.Println("BussinessID: ", BussinesId)
-	state, err := t.RedisUsecase.RedisRepo.Get(ctx, chatID)
-	if err != nil {
-		fmt.Println("❌ Redis xatosi: " + err.Error())
-		t.SendErrorTelegramMessage(ctx, chatID)
-		return
-	}
 
-	if state != nil && state.State != "" {
-		t.handleRegistrationInput(message, chatID, state)
-		return
-	}
-	if userInput == "/register" {
-		t.startRegistration(chatID)
-		return
-	}
+	
 	if userInput == "/start" {
-		t.showWelcomeMessage(chatID)
+		t.showWelcomeMessage(ctx,message,UserId,BussinesId)
 		return
 	}
 
@@ -643,45 +630,6 @@ func (t *Handler) HandleTelegramMessage(message *tgbotapi.Message) {
 
 }
 
-func (t *Handler) handleRegistrationInput(message *tgbotapi.Message, chatID int64, state *entity.ClientState) {
-	ctx := context.TODO()
-
-	switch state.State {
-	case "first_name":
-		state.ClientDetails.FirstName = message.Text
-		state.State = "phone"
-		t.RedisUsecase.RedisRepo.Set(ctx, chatID, state)
-		t.SendTelegramMessage(ctx, entity.SendMessageModel{
-			ChatID:  chatID,
-			Message: "phone number kiriting:",
-		})
-
-	case "phone":
-		state.ClientDetails.Phone = message.Text
-		state.ClientDetails.PlatformID = fmt.Sprintf("%d", message.From.ID)
-		state.ClientDetails.ChatId = chatID
-		state.ClientDetails.BusinessId = t.BusinessId
-		state.ClientDetails.UserName = message.From.UserName
-		state.ClientDetails.From = "bot"
-		res, err := t.Usecase.CreateClient(ctx, state.ClientDetails)
-		if err != nil {
-			fmt.Println("❌ Mijozni ro'yxatga olishda xatolik: " + err.Error())
-			t.SendErrorTelegramMessage(ctx, chatID)
-			return
-		}
-
-		err = t.RedisUsecase.RedisRepo.Delete(ctx, chatID)
-		if err != nil {
-			fmt.Println("❌ Redisda state o'chirishda xatolik: " + err.Error())
-			return
-		}
-
-		t.SendTelegramMessage(ctx, entity.SendMessageModel{
-			ChatID:  chatID,
-			Message: fmt.Sprintf("✅ Ro'yxatdan o'tdingiz, %s!", res.Username),
-		})
-	}
-}
 
 func AddNewBot(req entity.BotIntegration) error {
 	tgBot, err := NewHandler(&config.Config{}, req.Token, req.BusinessID, req.UserID, newGeminiModel, newchatgptmodel, translationUseCase, redisUscase)

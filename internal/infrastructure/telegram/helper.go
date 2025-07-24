@@ -264,7 +264,7 @@ func (t *Handler) SendMessageToAdmin(chat entity.SendMessageResponse) {
 	}
 	// http://ai-seller-admin:8080/v1/websocket/chat/send-message
 	// http://localhost:8080/v1/websocket/chat/send-message
-	resp, err := http.Post("http://localhost:8080/v1/websocket/chat/send-message", "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post("http://ai-seller-admin:8080/v1/websocket/chat/send-message", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Println("Error while sending POST request:", err)
 		return

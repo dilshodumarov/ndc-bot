@@ -128,7 +128,7 @@ func Run(cfg *config.Config) {
 	r := gin.Default()
 	api.NewTelegramRoutes(*telegramUscase, *instagramUscase, cfg, r)
 	api.NewRouter(r)
-	r.Run(":8081")
+	r.Run(":808")
 
 }
 

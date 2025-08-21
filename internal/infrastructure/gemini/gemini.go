@@ -381,6 +381,7 @@ func (g *Gemini) GetProductIDbyName(ctx context.Context, userQuery string, produ
 	- Mahsulot nomi to‘liq bo‘lishi shart emas (masalan: "Langet" => "Langet s garnirom").
 	- Faqat 'products' va 'user_message' maydonlarini qaytaring.
 	- Faqat JSON qaytaring. Hech qanday qo‘shimcha izoh, kod yoki matn bo‘lmasin.
+	- Agar mahsulot kam bolsa muloyimlik bilan kamligini habar qil va boshqa product tavsia qil
 	`, userQuery, string(productsJSON))
 
 	// Generate AI response

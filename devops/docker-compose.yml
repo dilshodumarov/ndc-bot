@@ -26,8 +26,8 @@ services:
   minio:
     image: docker.io/bitnami/minio:2024
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '9005:9005'
+      - '9004:9004'
     volumes:
       - 'minio_data:/data'
     environment:

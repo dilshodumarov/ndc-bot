@@ -107,9 +107,9 @@ func (t *Handler) SendMessageToAdmin(chat entity.SendMessageResponse) {
 		fmt.Println("Error while marshaling chat message:", err)
 		return
 	}
-	// http://ai-seller-admin:8080/v1/websocket/chat/send-message
-	// http://localhost:8080/v1/websocket/chat/send-message
-	resp, err := http.Post(pythonBaseURL+"http://localhost:8080/v1/websocket/chat/send-message", "application/json", bytes.NewBuffer(body))
+	// http://ai-seller-admin:8089/v1/websocket/chat/send-message
+	// http://localhost:8089/v1/websocket/chat/send-message
+	resp, err := http.Post(pythonBaseURL+"http://localhost:8089/v1/websocket/chat/send-message", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Println("Error while sending POST request:", err)
 		return
